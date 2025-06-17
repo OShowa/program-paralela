@@ -32,6 +32,9 @@ int main(int argc, char *argv[]) {
     primos[0] = 0;
     primos[1] = 0;
 
+    double start_time, end_time;
+    start_time = omp_get_wtime();
+
     int limite = (int) sqrt(N);
 
     #pragma omp parallel for schedule(dynamic)
@@ -43,6 +46,8 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+    end_time = omp_get_wtime();
+    
 
     printf("Numeros primos ate %d:\n", N);
     for (int i = 2; i <= N; i++) {
@@ -51,6 +56,7 @@ int main(int argc, char *argv[]) {
         }
     }
     printf("\n");
+    printf("Elapsed time: %f seconds\n", end_time - start_time);
 
     free(primos);
     return 0;
