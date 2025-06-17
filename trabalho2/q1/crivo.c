@@ -4,8 +4,9 @@
 #include <omp.h>
 
 #define N_VALUE 15000
+#define DEFAULT_OMP_THREADS 1
 
-int main() {
+int main(int argc, char *argv[]) {
     int N = N_VALUE;
 
     int omp_threads = DEFAULT_OMP_THREADS;
