@@ -41,3 +41,17 @@ Esse loop é crucial para o funcionamento do algoritmo e exige um cuidado extra.
 
 As cláusulas shared, private e schedule foram escolhidas seguindo lógicas análogas aos laços anteriores, mas aqui foi preciso usar a operação de redução em dt. Isso se dá pois o algoritmo monitora a diferença máxima obtida na última iteração para decidir se vai continuar calculando ou não. Isso significa que não basta para nós manter dt privado dentro de cada thread e jogá-lo fora ao fim da zona paralela de código, porque isso culminaria na permanência do dt da thread mestre inalterado. A solução é simples: dt vira uma variável de redução com operação de máximo, de forma que cada thread vai calcular o seu dt máximo e ao final vai ser feita uma operação de "máximo entre os máximos" para reduzir e obter o verdadeiro dt máximo na zona sequencial do código. Assim, o funcionamento do while continua saudável.
 
+### Desempenho
+
+Utilizamos a planilha disponibilizada no AVA para medir os tempos de execução do programa com 1, 8, 16, 32 e 64 threads, obtendo uma média para cada tempo.
+
+![image](../images/Mediaq3.png)
+
+A partir desses dados, foi possível medir o speedup e eficiência da execução do programa com os diferentes números de threads, e obtivemos um bom speedup.
+
+![image](../images/TempoxThreadsq3.png)
+
+![image](../images/SpeedupxThreadsq3.png)
+
+![image](../images/EdicienciaxThreadsq3.png)
+
