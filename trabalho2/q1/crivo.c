@@ -36,7 +36,6 @@ int main() {
     #pragma omp parallel for schedule(dynamic)
     for (int i = 2; i <= limite; i++) {
         if (primos[i]) {
-            // Marca os múltiplos de i como não primos
             #pragma omp parallel for schedule(dynamic)
             for (int j = i * i; j <= N; j += i) {
                 primos[j] = 0;
@@ -44,7 +43,6 @@ int main() {
         }
     }
 
-    // Impressão dos números primos encontrados
     printf("Numeros primos ate %d:\n", N);
     for (int i = 2; i <= N; i++) {
         if (primos[i]) {
