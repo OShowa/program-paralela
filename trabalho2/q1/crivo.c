@@ -3,7 +3,7 @@
 #include <math.h>
 #include <omp.h>
 
-#define N_VALUE 15000
+#define N_VALUE 750000000
 #define DEFAULT_OMP_THREADS 1
 
 int main(int argc, char *argv[]) {
