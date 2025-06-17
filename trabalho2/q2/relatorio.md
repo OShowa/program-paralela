@@ -8,12 +8,12 @@ Para corrigir, foi simplesmente incluído um sleep de 1 segundo entre o pedido d
 
 O mandelbrot colorido foi relativamente fácil de implementar: por meio da função `XSetForeground`, definimos a cor do pixel a ser desenhado, que é calculada com base em k. A escolha de k em particular é por efeitos visuais: se o número diverge rapidamente, ele tende a ficar mais escuro, além de podermos escolher o tom exato que queremos para o conjunto em si definindo k = 100.
 
-![image](../images/colored_mandelbrot.png)
+![image](../images/fluzao_mandelbrot.png)
 
 A paralelização do código foi feita por meio de duas diretivas do OpenMP. A primeira diz respeito ao loop principal:
 
 ```c++
-#pragma omp parallel for shared(display, win, gc) private(j, z, c, k, lengthsq, temp) schedule(static)
+#pragma omp parallel for collapse(2) shared(display, win, gc) private(z, c, k, temp, lengthsq)
 ```
 
 Foram declaradas explicitamente as variáveis que deveriam ser privadas, sendo elas as que envolviam operações de atribuição, e as variáveis compartilhadas, sendo elas as que envolviam apenas leitura.
@@ -25,7 +25,6 @@ A segunda diretiva dizia respeito às operações de IO envolvendo o desenho de 
 ```c++
 #pragma omp critical
 {
-    XSetForeground(display, gc, color);
     XDrawPoint(display, win, gc, j, i);
 }
 ```
@@ -35,3 +34,11 @@ Ela apenas garante que essas operações sejam feitas uma thread por vez, para e
 Antes de começar os testes, uma última mudança foi feita: o número de threads é recebido pela entrada padrão para evitar a necessidade de recompilar o programa para cada teste. A compilação foi feita com o comando `gcc -fopenmp -o mandelbrot mandelbrot.c -lX11 -lm`.
 
 ### Medição de desempenho
+
+![image](../images/mandelbrot_efficience.png)
+
+![image](../images/Speedup_threads_q2.png)
+
+É possível notar que há o speed-up até o uso de 16 threads. Utilizando 32 threads, vemos que a performance fica similar, piorando um pouco em certas tentativas. E, com 64 threads, a performance piora significamente, similar a utilizar 8 threads.
+
+Isso ocorre por causa da parte crítica do programa. O aumento de threads faz com que haja muita concorrencia entre o uso dessa área. Uma maneira de contornar essa limitação é realizar o desenho separadamente, e só guardar os valores em uma matriz ou vetor.

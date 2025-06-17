@@ -1,4 +1,4 @@
-/* Sequential Mandlebrot program */
+/* Parallel Mandlebrot program */
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -10,8 +10,8 @@
 #include <sys/time.h>
 #include <omp.h>
 
-#define X_RESN 20000 /* x resolution */
-#define Y_RESN 20000 /* y resolution */
+#define X_RESN 15000 /* x resolution */
+#define Y_RESN 15000 /* y resolution */
 #define DEFAULT_OMP_THREADS 1
 
 typedef struct complextype
@@ -40,6 +40,8 @@ void main(int argc, char *argv[])
     char str[100];
 
     XSetWindowAttributes attr[1];
+
+    // int pixel_matrix[X_RESN][Y_RESN] = {0};
 
     /* Mandlebrot variables */
     int i, j, k;
@@ -92,13 +94,34 @@ void main(int argc, char *argv[])
 
     gc = XCreateGC(display, win, valuemask, &values);
 
-    XSetBackground(display, gc, WhitePixel(display, screen));
-    XSetForeground(display, gc, BlackPixel(display, screen));
+    XColor green_color, red_color;
+    Colormap colormap = DefaultColormap(display, screen);
+
+    green_color.red = 0;
+    green_color.green = 65535;
+    green_color.blue = 0;
+    green_color.flags = DoRed | DoGreen | DoBlue;
+    XAllocColor(display, colormap, &green_color);
+
+    red_color.red = 65535;
+    red_color.green = 0;
+    red_color.blue = 0;
+    red_color.flags = DoRed | DoGreen | DoBlue;
+    XAllocColor(display, colormap, &red_color);
+
+    // XSetBackground(display, gc, WhitePixel(display, screen));
+    // XSetForeground(display, gc, BlackPixel(display, screen));
+    XSetBackground(display, gc, green_color.pixel);
+    XSetForeground(display, gc, red_color.pixel);
     XSetLineAttributes(display, gc, 1, LineSolid, CapRound, JoinRound);
+
+    win = XCreateSimpleWindow(display, RootWindow(display, screen),
+                          x, y, width, height, border_width,
+                          BlackPixel(display, screen), green_color.pixel);
 
     attr[0].backing_store = Always;
     attr[0].backing_planes = 1;
-    attr[0].backing_pixel = BlackPixel(display, screen);
+    attr[0].backing_pixel = green_color.pixel;
 
     XChangeWindowAttributes(display, win, CWBackingStore | CWBackingPlanes | CWBackingPixel, attr);
 
@@ -121,14 +144,16 @@ void main(int argc, char *argv[])
     double start_time, end_time;
     start_time = omp_get_wtime();
 
-    #pragma omp parallel for shared(display, win, gc) private(j, z, c, k, lengthsq, temp) schedule(static)
+    // int pixels[X_RESN][Y_RESN] = {0};
+
+    #pragma omp parallel for collapse(2) shared(display, win, gc) private(z, c, k, temp, lengthsq)
     for (i = 0; i < X_RESN; i++)
         for (j = 0; j < Y_RESN; j++)
         {
 
             z.real = z.imag = 0.0;
-            c.real = ((float)j - X_RESN / 2.0) / (X_RESN / 4.0); /* scale factors for 800 x 800 window */
-            c.imag = ((float)i - Y_RESN / 2.0) / (Y_RESN / 4.0);
+            c.real = ((float) j - (X_RESN / 2.0))/ (X_RESN / 4.0);               /* scale factors for 800 x 800 window */
+			c.imag = ((float) i - (Y_RESN / 2.0))/(Y_RESN / 4.0);
             k = 0;
 
             do
@@ -141,14 +166,11 @@ void main(int argc, char *argv[])
 
             } while (lengthsq < 4.0 && k < 100);
 
-            int r = (k * 5) % 256;
-            int g = (k * 3) % 256;
-            int b = (k * 3) % 256;
-            unsigned long color = (r << 16) | (g << 8) | b;
-            #pragma omp critical
-            {
-                XSetForeground(display, gc, color);
-                XDrawPoint(display, win, gc, j, i);
+            if(k == 100){
+                #pragma omp critical
+                {
+                    XDrawPoint(display, win, gc, j, i);
+                }
             }
         }
 
@@ -156,6 +178,8 @@ void main(int argc, char *argv[])
     printf("Elapsed time: %f seconds\n", end_time - start_time);
 
     XFlush(display);
+
+    getchar();
     // sleep(30);
 
     /* Program Finished */
